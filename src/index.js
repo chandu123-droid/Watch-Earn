@@ -1,8 +1,7 @@
 import 'dotenv/config';
 import express from "express";
 import cors from "cors";
-import jwt from "jsonwebtoken";
-import { db } from "./db.js";
+import { initDB } from "./db.js";
 import { 
   registerUser, 
   loginUser, 
@@ -11,6 +10,7 @@ import {
   getUserBalance, 
   sendPayout 
 } from "./queries.js";
+import jwt from "jsonwebtoken";
 
 const app = express();
 app.use(cors());
@@ -30,7 +30,7 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// ---------------------- REGISTER ---------------------- //
+// ---------------------- ROUTES ---------------------- //
 app.post("/register", async (req, res) => {
   const { name, email, password, upi_id } = req.body;
   try {
@@ -41,7 +41,6 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// ---------------------- LOGIN ---------------------- //
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -53,7 +52,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ---------------------- GET ADS ---------------------- //
 app.get("/ads", authMiddleware, async (req, res) => {
   try {
     const ads = await getAds();
@@ -63,7 +61,6 @@ app.get("/ads", authMiddleware, async (req, res) => {
   }
 });
 
-// ---------------------- WATCH AD ---------------------- //
 app.post("/watch/:adId", authMiddleware, async (req, res) => {
   try {
     const reward = await watchAd(req.user.id, req.params.adId);
@@ -73,7 +70,6 @@ app.post("/watch/:adId", authMiddleware, async (req, res) => {
   }
 });
 
-// ---------------------- BALANCE ---------------------- //
 app.get("/balance", authMiddleware, async (req, res) => {
   try {
     const data = await getUserBalance(req.user.id);
@@ -83,11 +79,9 @@ app.get("/balance", authMiddleware, async (req, res) => {
   }
 });
 
-// ---------------------- WITHDRAW (SIMULATED) ---------------------- //
 app.post("/withdraw", authMiddleware, async (req, res) => {
   try {
-    const { upi_id } = req.body; // Optional, default to user's UPI
-    const payout = await sendPayout(req.user.id, upi_id);
+    const payout = await sendPayout(req.user.id, req.body.upi_id);
     res.json(payout);
   } catch (e) {
     res.status(400).json({ error: e.message });
@@ -96,4 +90,7 @@ app.post("/withdraw", authMiddleware, async (req, res) => {
 
 // ---------------------- START SERVER ---------------------- //
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+initDB().then(() => {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+});
