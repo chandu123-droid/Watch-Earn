@@ -1,24 +1,16 @@
 import 'dotenv/config';
 import express from "express";
 import cors from "cors";
-import { initDB } from "./db.js";
-import { 
-  registerUser, 
-  loginUser, 
-  getAds, 
-  watchAd, 
-  getUserBalance, 
-  sendPayout 
-} from "./queries.js";
 import jwt from "jsonwebtoken";
+import { db } from "./db.js";
+import { registerUser, loginUser, getAds, getUserBalance } from "./queries.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const SECRET = process.env.JWT_SECRET || "supersecretkey";
+const SECRET = "supersecretkey";
 
-// ---------------------- AUTH MIDDLEWARE ---------------------- //
 function authMiddleware(req, res, next) {
   const token = req.headers["authorization"]?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "Unauthorized" });
@@ -30,7 +22,6 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// ---------------------- ROUTES ---------------------- //
 app.post("/register", async (req, res) => {
   const { name, email, password, upi_id } = req.body;
   try {
@@ -43,13 +34,9 @@ app.post("/register", async (req, res) => {
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  try {
-    const result = await loginUser(email, password);
-    if (!result) return res.status(400).json({ error: "Invalid credentials" });
-    res.json(result);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  const result = await loginUser(email, password);
+  if (!result) return res.status(400).json({ error: "Invalid credentials" });
+  res.json(result);
 });
 
 app.get("/ads", authMiddleware, async (req, res) => {
@@ -61,12 +48,36 @@ app.get("/ads", authMiddleware, async (req, res) => {
   }
 });
 
-app.post("/watch/:adId", authMiddleware, async (req, res) => {
+// Start watching ad (logs start, no reward yet)
+app.post("/watch/:adId/start", authMiddleware, async (req, res) => {
+  const adId = req.params.adId;
   try {
-    const reward = await watchAd(req.user.id, req.params.adId);
-    res.json({ reward });
+    const ad = await db.get("SELECT * FROM ads WHERE id = ?", [adId]);
+    if (!ad) return res.status(404).json({ error: "Ad not found" });
+
+    // Could log start if needed
+    res.json({ message: "Ad started" });
   } catch (e) {
-    res.status(400).json({ error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Complete watching ad (adds reward)
+app.post("/watch/:adId/complete", authMiddleware, async (req, res) => {
+  const adId = req.params.adId;
+  try {
+    const ad = await db.get("SELECT * FROM ads WHERE id = ?", [adId]);
+    if (!ad) return res.status(404).json({ error: "Ad not found" });
+
+    // Insert into watched_ads for record
+    await db.run("INSERT INTO watched_ads (user_id, ad_id) VALUES (?, ?)", [req.user.id, adId]);
+
+    // Update user balance
+    await db.run("UPDATE users SET balance = balance + ? WHERE id = ?", [ad.reward, req.user.id]);
+
+    res.json({ reward: ad.reward });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -79,18 +90,4 @@ app.get("/balance", authMiddleware, async (req, res) => {
   }
 });
 
-app.post("/withdraw", authMiddleware, async (req, res) => {
-  try {
-    const payout = await sendPayout(req.user.id, req.body.upi_id);
-    res.json(payout);
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
-});
-
-// ---------------------- START SERVER ---------------------- //
-const PORT = process.env.PORT || 5000;
-
-initDB().then(() => {
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-});
+app.listen(5000, () => console.log("Server running on port 5000"));
