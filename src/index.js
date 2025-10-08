@@ -3,13 +3,13 @@ import express from "express";
 import cors from "cors";
 import jwt from "jsonwebtoken";
 import { db } from "./db.js";
-import {
-  registerUser,
-  loginUser,
-  getAds,
-  watchAd,
-  getUserBalance,
-  sendPayout,
+import { 
+  registerUser, 
+  loginUser, 
+  getAds, 
+  watchAd, 
+  getUserBalance, 
+  sendPayout 
 } from "./queries.js";
 
 const app = express();
@@ -22,7 +22,6 @@ const SECRET = process.env.JWT_SECRET || "supersecretkey";
 function authMiddleware(req, res, next) {
   const token = req.headers["authorization"]?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "Unauthorized" });
-
   try {
     req.user = jwt.verify(token, SECRET);
     next();
@@ -31,20 +30,18 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// ---------------------- ROUTES ---------------------- //
-
-// Registration
+// ---------------------- REGISTER ---------------------- //
 app.post("/register", async (req, res) => {
   const { name, email, password, upi_id } = req.body;
   try {
     await registerUser(name, email, password, upi_id);
-    res.json({ success: true, message: "User registered successfully" });
+    res.json({ success: true });
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
 });
 
-// Login
+// ---------------------- LOGIN ---------------------- //
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -56,7 +53,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Get all ads
+// ---------------------- GET ADS ---------------------- //
 app.get("/ads", authMiddleware, async (req, res) => {
   try {
     const ads = await getAds();
@@ -66,7 +63,7 @@ app.get("/ads", authMiddleware, async (req, res) => {
   }
 });
 
-// Watch an ad
+// ---------------------- WATCH AD ---------------------- //
 app.post("/watch/:adId", authMiddleware, async (req, res) => {
   try {
     const reward = await watchAd(req.user.id, req.params.adId);
@@ -76,7 +73,7 @@ app.post("/watch/:adId", authMiddleware, async (req, res) => {
   }
 });
 
-// Get user balance
+// ---------------------- BALANCE ---------------------- //
 app.get("/balance", authMiddleware, async (req, res) => {
   try {
     const data = await getUserBalance(req.user.id);
@@ -86,28 +83,17 @@ app.get("/balance", authMiddleware, async (req, res) => {
   }
 });
 
-// Withdraw via Razorpay
+// ---------------------- WITHDRAW (SIMULATED) ---------------------- //
 app.post("/withdraw", authMiddleware, async (req, res) => {
-  const userId = req.user.id;
-  const { upi_id } = req.body;
-
   try {
-    const data = await getUserBalance(userId);
-    const finalUpi = upi_id || data.upi_id;
-
-    if (!finalUpi) return res.status(400).json({ error: "UPI ID required" });
-
-    const payout = await sendPayout(userId, finalUpi);
-
-    res.json({ message: payout.message, payoutId: payout.payoutId });
+    const { upi_id } = req.body; // Optional, default to user's UPI
+    const payout = await sendPayout(req.user.id, upi_id);
+    res.json(payout);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: e.message });
+    res.status(400).json({ error: e.message });
   }
 });
 
-// ---------------------- SERVER ---------------------- //
+// ---------------------- START SERVER ---------------------- //
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
