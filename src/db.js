@@ -1,63 +1,55 @@
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
-import path from "path";
-import { fileURLToPath } from "url";
-
-// __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Database file path
-const DB_PATH = path.join(__dirname, "watchads.db");
 
 export let db;
 
-// Initialize and open SQLite database
 export async function initDB() {
   db = await open({
-    filename: DB_PATH,
+    filename: "./watchads.db",
     driver: sqlite3.Database,
   });
 
-  // Enable foreign keys
-  await db.exec("PRAGMA foreign_keys = ON");
-
-  // Create users table
+  // Create tables if not exist
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL,
+      name TEXT,
+      email TEXT UNIQUE,
+      password TEXT,
       upi_id TEXT,
       balance REAL DEFAULT 0
     )
   `);
 
-  // Create ads table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS ads (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
+      name TEXT,
       description TEXT,
-      reward REAL NOT NULL
+      reward REAL
     )
   `);
 
-  // Create watched_ads table to track which ads a user has watched
   await db.exec(`
     CREATE TABLE IF NOT EXISTS watched_ads (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      ad_id INTEGER NOT NULL,
-      watched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY(ad_id) REFERENCES ads(id) ON DELETE CASCADE
+      user_id INTEGER,
+      ad_id INTEGER,
+      FOREIGN KEY(user_id) REFERENCES users(id),
+      FOREIGN KEY(ad_id) REFERENCES ads(id)
     )
   `);
 
-  console.log("SQLite database initialized successfully!");
-}
+  // Insert sample ads if table is empty
+  const adsCount = await db.get("SELECT COUNT(*) as count FROM ads");
+  if (adsCount.count === 0) {
+    await db.exec(`
+      INSERT INTO ads (name, description, reward) VALUES
+      ('Video Ad', 'Earn by watching this ad', 1),
+      ('Promo Ad', 'Special offer ad to earn rewards', 2),
+      ('Game Ad', 'Watch this game ad and earn', 1.5)
+    `);
+  }
 
-// Initialize DB immediately
-initDB();
+  console.log("Database initialized");
+}
