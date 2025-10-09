@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 const SECRET = process.env.JWT_SECRET || "supersecretkey";
 const ADMIN_UPI = "myacct597@okaxis";
 
-// ---------------------- USERS ---------------------- //
+// USERS
 export async function registerUser(name, email, password, upi_id) {
   if (!name || !email || !password || !upi_id) throw new Error("All fields required");
   const hash = await bcrypt.hash(password, 10);
@@ -17,14 +17,14 @@ export async function registerUser(name, email, password, upi_id) {
 
 export async function loginUser(email, password) {
   const user = await db.get("SELECT * FROM users WHERE email = ?", [email]);
-  if (!user) throw new Error("Email not registered");
+  if (!user) return null;
   const valid = await bcrypt.compare(password, user.password);
-  if (!valid) throw new Error("Invalid credentials");
+  if (!valid) return null;
   const token = jwt.sign({ id: user.id }, SECRET);
   return { user, token };
 }
 
-// ---------------------- ADS ---------------------- //
+// ADS
 export async function getAds() {
   return await db.all("SELECT * FROM ads");
 }
@@ -33,7 +33,6 @@ export async function watchAd(userId, adId) {
   const ad = await db.get("SELECT * FROM ads WHERE id = ?", [adId]);
   if (!ad) throw new Error("Ad not found");
 
-  // Check if user already watched this ad
   const watched = await db.get(
     "SELECT * FROM watched_ads WHERE user_id = ? AND ad_id = ?",
     [userId, adId]
@@ -50,7 +49,7 @@ export async function getUserBalance(userId) {
   return { balance: user.balance, upi_id: user.upi_id };
 }
 
-// ---------------------- SIMULATED WITHDRAW ---------------------- //
+// SIMULATED WITHDRAW
 export async function sendPayout(userId, upi) {
   const user = await db.get("SELECT * FROM users WHERE id = ?", [userId]);
   if (!user) throw new Error("User not found");
@@ -62,15 +61,7 @@ export async function sendPayout(userId, upi) {
   const user_share = (user.balance * 0.4).toFixed(2);
   const admin_share = (user.balance * 0.6).toFixed(2);
 
-  // Reset user balance
   await db.run("UPDATE users SET balance = 0 WHERE id = ?", [userId]);
 
-  // Return simulated payout info
-  return {
-    message: `Payout processed`,
-    user_share,
-    admin_share,
-    user_upi: finalUpi,
-    admin_upi: ADMIN_UPI
-  };
+  return { user_share, admin_share, user_upi: finalUpi, admin_upi: ADMIN_UPI };
 }

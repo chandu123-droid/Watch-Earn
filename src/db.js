@@ -1,16 +1,13 @@
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 
-// Enable verbose mode for debugging
 sqlite3.verbose();
 
-// Open database connection
 export const db = await open({
-  filename: "./watchads.db", // make sure the path is correct
+  filename: "./watchads.db",
   driver: sqlite3.Database,
 });
 
-// Initialize tables if not exist
 await db.exec(`
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
