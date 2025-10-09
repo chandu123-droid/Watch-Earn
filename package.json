@@ -15,10 +15,6 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
-<<<<<<< HEAD
-    "crypto": "^1.0.1",
-=======
->>>>>>> e6a4b1351a932768bc2aa54b9af1c8092d37d8ca
     "crypto-js": "^4.2.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
