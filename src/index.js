@@ -1,7 +1,11 @@
+// ---------------------------
+// IMPORTS
+// ---------------------------
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import jwt from "jsonwebtoken";
+import path from "path";
 import {
   registerUser,
   loginUser,
@@ -11,10 +15,25 @@ import {
   sendPayout,
 } from "./queries.js";
 
+// ---------------------------
+// APP SETUP
+// ---------------------------
 const app = express();
-app.use(cors());
+const __dirname = path.resolve();
+
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://your-frontend-domain.com"], // add your frontend URL
+    methods: ["GET", "POST"],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
+// ---------------------------
+// CONSTANTS
+// ---------------------------
 const SECRET = process.env.JWT_SECRET || "supersecretkey";
 
 // ---------------------------
@@ -33,7 +52,7 @@ function authMiddleware(req, res, next) {
 }
 
 // ---------------------------
-// ROUTES
+// API ROUTES
 // ---------------------------
 
 // REGISTER USER
@@ -89,9 +108,6 @@ app.get("/balance", authMiddleware, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
-});
 
 // WITHDRAW BALANCE
 app.post("/withdraw", authMiddleware, async (req, res) => {
@@ -105,7 +121,21 @@ app.post("/withdraw", authMiddleware, async (req, res) => {
 });
 
 // ---------------------------
+// STATIC FRONTEND (FIX FOR "NOT FOUND")
+// ---------------------------
+
+// ✅ Serve frontend build folder (adjust if needed)
+app.use(express.static(path.join(__dirname, "client", "dist"))); // or "client/build" if React
+
+// ✅ Handle any unknown routes (React Router fix)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
+});
+
+// ---------------------------
 // START SERVER
 // ---------------------------
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`🚀 Server running on http://localhost:${PORT}`)
+);
