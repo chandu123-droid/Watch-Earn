@@ -21,14 +21,16 @@ import {
 const app = express();
 const __dirname = path.resolve();
 
+// CORS setup (replace with your frontend URL)
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://your-frontend-domain.com"], // Replace with your frontend URL
+    origin: ["http://localhost:5173", "https://your-frontend-domain.com"],
     methods: ["GET", "POST"],
     credentials: true,
   })
 );
 
+// Parse JSON requests
 app.use(express.json());
 
 // ---------------------------
@@ -121,15 +123,15 @@ app.post("/withdraw", authMiddleware, async (req, res) => {
 });
 
 // ---------------------------
-// STATIC FRONTEND (FIX FOR "NOT FOUND")
+// STATIC FRONTEND (React SPA / FIX NOT FOUND)
 // ---------------------------
 
 // Serve static frontend files
-app.use(express.static(path.join(__dirname, "client", "dist"))); // change "dist" if your build folder is named differently
+app.use(express.static(path.join(__dirname, "client", "dist"))); // change "dist" if your build folder is "build"
 
-// Handle all other routes (React Router / SPA fallback)
-app.get("/*", (req, res) => {
-  res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
+// Catch-all route for React Router (ES modules safe)
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "client", "dist", "index.html")); // same folder as above
 });
 
 // ---------------------------
