@@ -1,40 +1,55 @@
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
+import { createClient } from "@libsql/client";
+import dotenv from "dotenv";
 
-// Enable verbose mode for debugging
-sqlite3.verbose();
+dotenv.config();
 
-// Open database connection
-export const db = await open({
-  filename: "./watchads.db", // make sure the path is correct
-  driver: sqlite3.Database,
-});
+const url = process.env.DATABASE_URL;
+const authToken = process.env.DATABASE_AUTH_TOKEN;
 
-// Initialize tables if not exist
-await db.exec(`
-CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT,
-  email TEXT UNIQUE,
-  password TEXT,
-  upi_id TEXT,
-  balance REAL DEFAULT 0
-);
+if (!url || !authToken) {
+  console.error("❌ Missing Turso credentials in .env file");
+  process.exit(1);
+}
 
-CREATE TABLE IF NOT EXISTS ads (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  title TEXT,
-  description TEXT,
-  video_url TEXT,
-  reward REAL
-);
+export const db = createClient({ url, authToken });
 
-CREATE TABLE IF NOT EXISTS watched_ads (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER,
-  ad_id INTEGER,
-  watched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY(user_id) REFERENCES users(id),
-  FOREIGN KEY(ad_id) REFERENCES ads(id)
-);
-`);
+// Initialize Tables
+async function init() {
+  console.log("🔗 Connecting to Turso database...");
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      upi_id TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      balance REAL DEFAULT 0
+    );
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS ads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT,
+      description TEXT,
+      video_url TEXT,
+      reward REAL
+    );
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS watched_ads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      ad_id INTEGER,
+      watched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(user_id) REFERENCES users(id),
+      FOREIGN KEY(ad_id) REFERENCES ads(id)
+    );
+  `);
+
+  console.log("✅ Turso DB initialized successfully!");
+}
+
+await init();
