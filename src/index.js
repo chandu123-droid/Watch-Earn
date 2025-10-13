@@ -126,13 +126,15 @@ app.post("/withdraw", authMiddleware, async (req, res) => {
 // STATIC FRONTEND (React SPA / FIX NOT FOUND)
 // ---------------------------
 
-// Serve static frontend files
-app.use(express.static(path.join(__dirname, "client", "dist"))); // change "dist" if your build folder is "build"
 
-// Catch-all route for React Router (ES modules safe)
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, "client", "build")));
+
+// Catch-all route for React Router
 app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "client", "dist", "index.html")); // same folder as above
+  res.sendFile(path.join(__dirname, "client", "build", "index.html"));
 });
+
 
 // ---------------------------
 // START SERVER
