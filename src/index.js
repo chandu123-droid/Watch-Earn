@@ -79,13 +79,6 @@ app.post("/watch/:adId/complete", authMiddleware, async (req, res) => {
     res.status(400).json({ error: e.message });
   }
 });
-// Serve static frontend files
-app.use(express.static(path.join(__dirname, "client", "build")));
-
-// Catch-all route for React Router
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "client", "build", "index.html"));
-});
 
 // GET USER BALANCE
 app.get("/balance", authMiddleware, async (req, res) => {
