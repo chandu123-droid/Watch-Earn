@@ -1,11 +1,7 @@
-// ---------------------------
-// IMPORTS
-// ---------------------------
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import jwt from "jsonwebtoken";
-import path from "path";
 import {
   registerUser,
   loginUser,
@@ -15,27 +11,10 @@ import {
   sendPayout,
 } from "./queries.js";
 
-// ---------------------------
-// APP SETUP
-// ---------------------------
 const app = express();
-const __dirname = path.resolve();
-
-// CORS setup (replace with your frontend URL)
-app.use(
-  cors({
-    origin: ["http://localhost:5173", "https://your-frontend-domain.com"],
-    methods: ["GET", "POST"],
-    credentials: true,
-  })
-);
-
-// Parse JSON requests
+app.use(cors());
 app.use(express.json());
 
-// ---------------------------
-// CONSTANTS
-// ---------------------------
 const SECRET = process.env.JWT_SECRET || "supersecretkey";
 
 // ---------------------------
@@ -54,7 +33,7 @@ function authMiddleware(req, res, next) {
 }
 
 // ---------------------------
-// API ROUTES
+// ROUTES
 // ---------------------------
 
 // REGISTER USER
@@ -100,6 +79,13 @@ app.post("/watch/:adId/complete", authMiddleware, async (req, res) => {
     res.status(400).json({ error: e.message });
   }
 });
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, "client", "build")));
+
+// Catch-all route for React Router
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "client", "build", "index.html"));
+});
 
 // GET USER BALANCE
 app.get("/balance", authMiddleware, async (req, res) => {
@@ -123,23 +109,7 @@ app.post("/withdraw", authMiddleware, async (req, res) => {
 });
 
 // ---------------------------
-// STATIC FRONTEND (React SPA / FIX NOT FOUND)
-// ---------------------------
-
-
-// Serve static frontend files
-app.use(express.static(path.join(__dirname, "client", "build")));
-
-// Catch-all route for React Router
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "client", "build", "index.html"));
-});
-
-
-// ---------------------------
 // START SERVER
 // ---------------------------
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(`🚀 Server running on http://localhost:${PORT}`)
-);
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
