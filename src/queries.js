@@ -9,8 +9,9 @@ const ADMIN_UPI = "myacct597@okaxis";
 // REGISTER USER
 // ---------------------------
 export async function registerUser(name, upi_id, email, password) {
-  if (!name || !upi_id || !email || !password)
+  if (!name || !upi_id || !email || !password) {
     throw new Error("All fields are required");
+  }
 
   const hash = await bcrypt.hash(password, 10);
 
@@ -35,10 +36,10 @@ export async function loginUser(email, password) {
     args: [email],
   });
   const user = result.rows[0];
-  if (!user) return null;
+  if (!user) throw new Error("Email not registered");
 
   const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return null;
+  if (!valid) throw new Error("Invalid credentials");
 
   const token = jwt.sign({ id: user.id }, SECRET);
 
@@ -73,7 +74,7 @@ export async function watchAd(userId, adId) {
   const ad = adResult.rows[0];
   if (!ad) throw new Error("Ad not found");
 
-  // Insert watch record
+  // Record the watch
   await db.execute({
     sql: "INSERT INTO watched_ads (user_id, ad_id) VALUES (?, ?)",
     args: [userId, adId],
@@ -100,7 +101,7 @@ export async function getUserBalance(userId) {
 }
 
 // ---------------------------
-// WITHDRAW (Simulated)
+// WITHDRAW (Simulated Payout)
 // ---------------------------
 export async function sendPayout(userId, upi) {
   const result = await db.execute({
@@ -117,10 +118,17 @@ export async function sendPayout(userId, upi) {
   const user_share = (user.balance * 0.4).toFixed(2);
   const admin_share = (user.balance * 0.6).toFixed(2);
 
+  // Reset user balance
   await db.execute({
     sql: "UPDATE users SET balance = 0 WHERE id = ?",
     args: [userId],
   });
 
-  return { user_share, admin_share, user_upi: finalUpi, admin_upi: ADMIN_UPI };
+  return {
+    message: "Payout processed successfully",
+    user_share,
+    admin_share,
+    user_upi: finalUpi,
+    admin_upi: ADMIN_UPI,
+  };
 }
