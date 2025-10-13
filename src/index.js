@@ -1,8 +1,19 @@
-import 'dotenv/config';
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import jwt from "jsonwebtoken";
+<<<<<<< HEAD
 import { registerUser, loginUser, getAds, watchAd, getUserBalance, sendPayout } from "./queries.js";
+=======
+import {
+  registerUser,
+  loginUser,
+  getAds,
+  watchAd,
+  getUserBalance,
+  sendPayout,
+} from "./queries.js";
+>>>>>>> 15e99fa (Updated backend logic / bug fixes)
 
 const app = express();
 app.use(cors());
@@ -10,6 +21,12 @@ app.use(express.json());
 
 const SECRET = process.env.JWT_SECRET || "supersecretkey";
 
+<<<<<<< HEAD
+=======
+// ---------------------------
+// AUTH MIDDLEWARE
+// ---------------------------
+>>>>>>> 15e99fa (Updated backend logic / bug fixes)
 function authMiddleware(req, res, next) {
   const token = req.headers["authorization"]?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "Unauthorized" });
@@ -21,22 +38,44 @@ function authMiddleware(req, res, next) {
   }
 }
 
+<<<<<<< HEAD
 // ROUTES
 app.post("/register", async (req, res) => {
   try {
     const { name, email, password, upi_id } = req.body;
     await registerUser(name, email, password, upi_id);
     res.json({ success: true });
+=======
+// ---------------------------
+// ROUTES
+// ---------------------------
+app.post("/register", async (req, res) => {
+  try {
+    const { name, upi_id, email, password } = req.body;
+    const result = await registerUser(name, upi_id, email, password);
+    res.json(result);
+>>>>>>> 15e99fa (Updated backend logic / bug fixes)
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
 });
 
 app.post("/login", async (req, res) => {
+<<<<<<< HEAD
   const { email, password } = req.body;
   const result = await loginUser(email, password);
   if (!result) return res.status(400).json({ error: "Invalid credentials" });
   res.json(result);
+=======
+  try {
+    const { email, password } = req.body;
+    const result = await loginUser(email, password);
+    if (!result) return res.status(400).json({ error: "Invalid credentials" });
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+>>>>>>> 15e99fa (Updated backend logic / bug fixes)
 });
 
 app.get("/ads", authMiddleware, async (req, res) => {
@@ -49,8 +88,11 @@ app.get("/ads", authMiddleware, async (req, res) => {
 });
 
 app.post("/watch/:adId/complete", authMiddleware, async (req, res) => {
-  const adId = req.params.adId;
   try {
+<<<<<<< HEAD
+=======
+    const adId = req.params.adId;
+>>>>>>> 15e99fa (Updated backend logic / bug fixes)
     const reward = await watchAd(req.user.id, adId);
     res.json({ reward });
   } catch (e) {
@@ -77,4 +119,7 @@ app.post("/withdraw", authMiddleware, async (req, res) => {
   }
 });
 
-app.listen(5000, () => console.log("Server running on port 5000"));
+// ---------------------------
+// START SERVER
+// ---------------------------
+app.listen(5000, () => console.log("🚀 Server running on http://localhost:5000"));
