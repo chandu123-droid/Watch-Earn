@@ -89,6 +89,9 @@ app.get("/balance", authMiddleware, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
+});
 
 // WITHDRAW BALANCE
 app.post("/withdraw", authMiddleware, async (req, res) => {
