@@ -23,6 +23,7 @@ const SECRET = process.env.JWT_SECRET || "supersecretkey";
 function authMiddleware(req, res, next) {
   const token = req.headers["authorization"]?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "Unauthorized" });
+
   try {
     req.user = jwt.verify(token, SECRET);
     next();
@@ -34,6 +35,8 @@ function authMiddleware(req, res, next) {
 // ---------------------------
 // ROUTES
 // ---------------------------
+
+// REGISTER USER
 app.post("/register", async (req, res) => {
   try {
     const { name, upi_id, email, password } = req.body;
@@ -44,6 +47,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
+// LOGIN USER
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -55,6 +59,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// GET ALL ADS
 app.get("/ads", authMiddleware, async (req, res) => {
   try {
     const ads = await getAds();
@@ -64,6 +69,7 @@ app.get("/ads", authMiddleware, async (req, res) => {
   }
 });
 
+// WATCH AD
 app.post("/watch/:adId/complete", authMiddleware, async (req, res) => {
   try {
     const adId = req.params.adId;
@@ -74,6 +80,7 @@ app.post("/watch/:adId/complete", authMiddleware, async (req, res) => {
   }
 });
 
+// GET USER BALANCE
 app.get("/balance", authMiddleware, async (req, res) => {
   try {
     const data = await getUserBalance(req.user.id);
@@ -83,6 +90,7 @@ app.get("/balance", authMiddleware, async (req, res) => {
   }
 });
 
+// WITHDRAW BALANCE
 app.post("/withdraw", authMiddleware, async (req, res) => {
   try {
     const { upi_id } = req.body;
@@ -96,4 +104,5 @@ app.post("/withdraw", authMiddleware, async (req, res) => {
 // ---------------------------
 // START SERVER
 // ---------------------------
-app.listen(5000, () => console.log("🚀 Server running on http://localhost:5000"));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
