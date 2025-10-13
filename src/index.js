@@ -23,7 +23,7 @@ const __dirname = path.resolve();
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://your-frontend-domain.com"], // add your frontend URL
+    origin: ["http://localhost:5173", "https://your-frontend-domain.com"], // Replace with your frontend URL
     methods: ["GET", "POST"],
     credentials: true,
   })
@@ -124,11 +124,11 @@ app.post("/withdraw", authMiddleware, async (req, res) => {
 // STATIC FRONTEND (FIX FOR "NOT FOUND")
 // ---------------------------
 
-// ✅ Serve frontend build folder (adjust if needed)
-app.use(express.static(path.join(__dirname, "client", "dist"))); // or "client/build" if React
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, "client", "dist"))); // change "dist" if your build folder is named differently
 
-// ✅ Handle any unknown routes (React Router fix)
-app.get("*", (req, res) => {
+// Handle all other routes (React Router / SPA fallback)
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
 });
 
